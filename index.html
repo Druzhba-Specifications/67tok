@@ -440,7 +440,7 @@
             const appContainer = document.querySelector('.app-container');
             const loader = document.querySelector('.loader');
 
-            // Mock Data for Videos and Ads
+            // --- Mock Data ---
             const mockVideos = [
                 { id: 'v1', src: 'https://cdn.glitch.me/c00c735d-251f-4886-90b5-e2a220268800%2Fvideo1.mp4?v=1727670732387', username: '@user_alpha', description: 'Just a beautiful sunset, sharing the vibe. #sunset #nature #chill', music: 'Original sound by user_alpha', profileImg: 'https://i.pravatar.cc/100?u=user_alpha', isAd: false },
                 { id: 'v2', src: 'https://cdn.glitch.me/c00c735d-251f-4886-90b5-e2a220268800%2Fvideo2.mp4?v=1727670733857', username: '@creator_beta', description: 'POV: You found the perfect cafe. ☕ #cafe #aesthetic #coffee #pov', music: 'Hip Hop Beat - Lofi Remix', profileImg: 'https://i.pravatar.cc/100?u=creator_beta', isAd: false },
@@ -464,12 +464,10 @@
 
             let videoElements = [];
             let isMuted = true;
-            let currentVideoIndex = 0;
             let videosLoaded = 0;
 
             // --- Functionality ---
 
-            // Create video item and inject into the DOM
             function createVideoItem(videoData, index) {
                 const videoItem = document.createElement('div');
                 videoItem.classList.add('video-item');
@@ -480,7 +478,7 @@
                 const musicIconPath = 'https://cdn.glitch.global/c00c735d-251f-4886-90b5-e2a220268800/music_icon.svg?v=1727671171822';
                 
                 videoItem.innerHTML = `
-                    <video class="video-player" loop preload="auto" playsinline>
+                    <video class="video-player" loop preload="auto" playsinline muted="${isMuted}">
                         <source src="${videoData.src}" type="video/mp4">
                     </video>
                     <div class="video-overlay">
@@ -523,7 +521,6 @@
                 return videoItem;
             }
 
-            // Append videos to the feed
             function loadMoreVideos() {
                 const newVideos = [];
                 for (let i = 0; i < 4; i++) {
@@ -541,15 +538,13 @@
                 });
                 videosLoaded += newVideos.length;
             }
-
-            // Intersectrion Observer for efficient auto-play
+            
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     const video = entry.target.querySelector('video');
                     if (entry.isIntersecting && video) {
                         video.play().catch(error => console.error("Autoplay was prevented:", error));
                         video.classList.add('active');
-                        video.muted = isMuted;
                     } else if (video) {
                         video.pause();
                         video.currentTime = 0;
@@ -564,7 +559,6 @@
                 });
             }
 
-            // Scroll event listener for infinite loading
             videoFeed.addEventListener('scroll', () => {
                 if (videoFeed.scrollTop + videoFeed.clientHeight >= videoFeed.scrollHeight - 500) {
                     loadMoreVideos();
@@ -572,18 +566,15 @@
                 }
             });
 
-            // Handle user interactions
             function handleInteractions(event) {
                 const target = event.target;
                 const isVideo = target.closest('.video-player');
                 const isLikeButton = target.closest('.sidebar-item .like');
                 const isMuteButton = target.closest('.mute-button');
 
-                // Toggle play/pause on video click
                 if (isVideo) {
                     const video = isVideo;
                     if (event.detail === 2) {
-                        // Double-tap to like
                         const videoItem = target.closest('.video-item');
                         const heart = document.createElement('span');
                         heart.classList.add('double-tap-heart');
@@ -593,10 +584,9 @@
 
                         const likeButton = videoItem.querySelector('.sidebar-icon.like');
                         if (!likeButton.classList.contains('liked')) {
-                            likeButton.click(); // Trigger the like logic
+                            likeButton.click();
                         }
                     } else if (event.detail === 1) {
-                        // Single tap to play/pause
                         if (video.paused) {
                             video.play();
                         } else {
@@ -605,7 +595,6 @@
                     }
                 }
 
-                // Toggle mute on button click
                 if (isMuteButton) {
                     isMuted = !isMuted;
                     videoElements.forEach(video => {
@@ -617,7 +606,6 @@
                     });
                 }
 
-                // Handle like button click
                 if (isLikeButton) {
                     isLikeButton.classList.toggle('liked');
                     const countSpan = isLikeButton.nextElementSibling;
@@ -633,22 +621,21 @@
                 }
             }
 
-            // Initialize app
             function initApp() {
                 loadMoreVideos();
                 loader.classList.add('hidden');
                 setupObserver();
                 appContainer.addEventListener('click', handleInteractions);
-
-                // Start the first video
-                if (videoElements[0]) {
-                    videoElements[0].play().catch(error => console.error("Autoplay was prevented:", error));
-                    videoElements[0].classList.add('active');
-                    videoElements[0].muted = isMuted;
-                }
             }
+            
+            // Wait for user interaction before initializing to avoid autoplay issues
+            document.addEventListener('click', () => {
+                const activeVideo = document.querySelector('.video-player.active');
+                if (activeVideo && activeVideo.paused) {
+                    activeVideo.play().catch(error => console.error("Play error on user click:", error));
+                }
+            }, { once: true });
 
-            // Preload a few videos for a smooth start
             const initialVideoCount = 3;
             const preloadPromises = mockVideos.slice(0, initialVideoCount).map(video => {
                 return new Promise((resolve) => {
