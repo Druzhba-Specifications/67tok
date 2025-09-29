@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>67tok Pro - For You</title>
+    <style>
+        /* --- General and Reset Styles --- */
+        :root {
+            --primary-color: #fe2c55;
+            --secondary-color: #25f4ee;
+            --background-dark: #000;
+            --text-light: #fff;
+            --sidebar-width: 60px;
+            --footer-height: 50px;
+            --ad-color: #ffd700;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        html, body {
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-dark);
+            color: var(--text-light);
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        /* --- App Container --- */
+        .app-container {
+            position: relative;
+            height: 100vh;
+            width: 100%;
+            max-width: 500px;
+            background: var(--background-dark);
+            display: flex;
+            flex-direction: column;
+        }
+        /* --- Top Navigation --- */
+        .top-nav {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 30;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 12px 0;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(5px);
+        }
+        .top-nav a {
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            font-weight: 600;
+            margin: 0 15px;
+            font-size: 16px;
+            transition: color 0.2s ease-in-out;
+        }
+        .top-nav a.active {
+            color: var(--text-light);
+            font-size: 18px;
+        }
+        .top-nav a.active::after {
+            content: '';
+            display: block;
+            width: 25px;
+            height: 3px;
+            background-color: var(--text-light);
+            margin: 4px auto 0;
+            border-radius: 2px;
+        }
+        /* --- Video Feed --- */
+        .video-feed {
+            flex-grow: 1;
+            position: relative;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            -webkit-overflow-scrolling: touch;
+        }
+        .video-feed::-webkit-scrollbar {
+            display: none;
+        }
+        .video-feed {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .video-item {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            scroll-snap-align: start;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            background-color: var(--background-dark);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .video-player {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: var(--background-dark);
+        }
+        .video-player.active {
+            z-index: 1;
+        }
+        .video-player:focus {
+            outline: none;
+        }
+        /* --- Simulated Ad Styling --- */
+        .video-item.ad .video-player {
+            filter: brightness(0.6);
+        }
+        .ad-label {
+            position: absolute;
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.8);
+            color: #000;
+            padding: 4px 8px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 4px;
+            z-index: 15;
+        }
+        .ad-cta {
+            position: absolute;
+            bottom: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--ad-color);
+            color: #000;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            z-index: 15;
+            cursor: pointer;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.05); }
+            100% { transform: translateX(-50%) scale(1); }
+        }
+        /* --- Sidebar --- */
+        .video-sidebar {
+            position: absolute;
+            right: 12px;
+            bottom: 120px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .sidebar-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            font-size: 10px;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out;
+        }
+        .sidebar-item:active {
+            transform: scale(0.9);
+        }
+        .sidebar-icon {
+            font-size: 28px;
+            margin-bottom: 4px;
+        }
+        .sidebar-icon.like.liked {
+            color: var(--primary-color);
+            animation: bounce 0.5s ease;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        .sidebar-icon.like.liked::before { content: '❤️'; }
+        .sidebar-icon.like:not(.liked)::before { content: '🤍'; }
+        .sidebar-icon.comment::before { content: '💬'; }
+        .sidebar-icon.share::before { content: '↪'; }
+        .sidebar-icon.profile img {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 2px solid var(--text-light);
+            object-fit: cover;
+        }
+        .profile-img-container { position: relative; }
+        .add-profile {
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 20px;
+            background-color: var(--primary-color);
+            color: var(--text-light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            line-height: 1;
+        }
+        /* --- Video Info --- */
+        .video-info {
+            position: absolute;
+            left: 12px;
+            bottom: 120px;
+            z-index: 10;
+            width: calc(100% - var(--sidebar-width) - 24px);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .video-info h3 {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        .video-info p {
+            font-size: 14px;
+            margin: 4px 0;
+        }
+        .video-music {
+            display: flex;
+            align-items: center;
+            margin-top: 8px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .video-music-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+            animation: spin 3s linear infinite;
+        }
+        .video-music span {
+            font-size: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        /* --- Bottom Nav --- */
+        .nav-bar {
+            width: 100%;
+            height: var(--footer-height);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background-color: #111;
+            border-top: 1px solid #333;
+            position: relative;
+            z-index: 20;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #777;
+            text-decoration: none;
+            font-size: 10px;
+            transition: color 0.2s ease-in-out;
+        }
+        .nav-item.active { color: var(--text-light); }
+        .nav-icon { font-size: 24px; margin-bottom: 2px; }
+        .nav-icon.home::before { content: '🏠'; }
+        .nav-icon.discover::before { content: '🔎'; }
+        .nav-icon.add-video {
+            width: 40px;
+            height: 28px;
+            border-radius: 8px;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            position: relative;
+            color: var(--text-light);
+        }
+        .nav-icon.inbox::before { content: '✉️'; }
+        .nav-icon.profile::before { content: '👤'; }
+        /* --- Overlays and Interactivity --- */
+        .loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--background-dark);
+            color: var(--text-light);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 0.5s ease-in-out;
+            opacity: 1;
+        }
+        .loader h1 {
+            font-family: 'Arial Black', sans-serif;
+            font-size: 40px;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+        .loader-spin {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: loading 1s linear infinite;
+        }
+        @keyframes loading {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loader.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+        }
+        .play-pause-icon {
+            font-size: 60px;
+            color: rgba(255, 255, 255, 0.7);
+            display: none;
+        }
+        .video-player:paused + .video-overlay .play-pause-icon {
+            display: block;
+        }
+        .mute-button {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            z-index: 10;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+        .mute-icon {
+            font-size: 20px;
+            color: var(--text-light);
+        }
+        .mute-icon.muted::before { content: '🔇'; }
+        .mute-icon.unmuted::before { content: '🔊'; }
+        .double-tap-heart {
+            position: absolute;
+            font-size: 100px;
+            color: var(--primary-color);
+            z-index: 10;
+            pointer-events: none;
+            opacity: 0;
+            transform: scale(0.5);
+            animation: doubleTapAnim 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.27);
+        }
+        @keyframes doubleTapAnim {
+            0% { transform: scale(0.5); opacity: 0; }
+            30% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="loader">
+        <h1>67tok</h1>
+        <div class="loader-spin"></div>
+    </div>
+    <div class="app-container">
+        <div class="top-nav">
+            <a href="#" class="following-link">Following</a>
+            <a href="#" class="for-you-link active">For You</a>
+        </div>
+        <div class="video-feed">
+            <!-- Videos and ads will be dynamically injected here -->
+        </div>
+        <nav class="nav-bar">
+            <a href="#" class="nav-item active">
+                <span class="nav-icon home"></span>
+                <span>Home</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon discover"></span>
+                <span>Discover</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon add-video">⁺</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon inbox"></span>
+                <span>Inbox</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon profile"></span>
+                <span>Profile</span>
+            </a>
+        </nav>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const videoFeed = document.querySelector('.video-feed');
+            const appContainer = document.querySelector('.app-container');
+            const loader = document.querySelector('.loader');
+
+            // Mock Data for Videos and Ads
+            const mockVideos = [
+                { id: 'v1', src: 'https://cdn.glitch.me/c00c735d-251f-4886-90b5-e2a220268800%2Fvideo1.mp4?v=1727670732387', username: '@user_alpha', description: 'Just a beautiful sunset, sharing the vibe. #sunset #nature #chill', music: 'Original sound by user_alpha', profileImg: 'https://i.pravatar.cc/100?u=user_alpha', isAd: false },
+                { id: 'v2', src: 'https://cdn.glitch.me/c00c735d-251f-4886-90b5-e2a220268800%2Fvideo2.mp4?v=1727670733857', username: '@creator_beta', description: 'POV: You found the perfect cafe. ☕ #cafe #aesthetic #coffee #pov', music: 'Hip Hop Beat - Lofi Remix', profileImg: 'https://i.pravatar.cc/100?u=creator_beta', isAd: false },
+                { id: 'v3', src: 'https://cdn.glitch.me/c00c735d-251f-4886-90b5-e2a220268800%2Fvideo3.mp4?v=1727670735319', username: '@explore_daily', description: 'Mountain hiking adventure! The views were insane. 🏔️ #hiking #adventure #mountains', music: 'Epic Journey - Bensound', profileImg: 'https://i.pravatar.cc/100?u=explore_daily', isAd: false },
+                { id: 'v4', src: 'https://cdn.glitch.me/c00c735d-251f-4886-90b5-e2a220268800%2Fvideo4.mp4?v=1727670736859', username: '@artistic_soul', description: 'Watch me paint this masterpiece. #art #painting #timelapse', music: 'Creative Flow - Royalty Free', profileImg: 'https://i.pravatar.cc/100?u=artistic_soul', isAd: false },
+                { id: 'v5', src: 'https://cdn.glitch.me/c00c735d-251f-4886-90b5-e2a220268800%2Fvideo5.mp4?v=1727670738198', username: '@funny_guy', description: 'Wait for it... you won\'t believe what happened! 😂 #comedy #funny #fail', music: 'Funny Moments - Meme Sound', profileImg: 'https://i.pravatar.cc/100?u=funny_guy', isAd: false },
+                { id: 'v6', src: 'https://cdn.glitch.me/c00c735d-251f-4886-90b5-e2a220268800%2Fvideo6.mp4?v=1727670739818', username: '@city_explorers', description: 'Exploring the neon-lit streets at night. So much energy! #city #nightlife #urban', profileImg: 'https://i.pravatar.cc/100?u=city_explorers', music: 'City Pop - Synthwave', isAd: false },
+                { id: 'v7', src: 'https://cdn.glitch.me/c00c735d-251f-4886-90b5-e2a220268800%2Fvideo7.mp4?v=1727670741270', username: '@pet_lover', description: 'My cat\'s reaction to a cucumber. Priceless! 😹 #cat #catsoftiktok #pet #funny', profileImg: 'https://i.pravatar.cc/100?u=pet_lover', music: 'Cute and Happy - Kevin MacLeod', isAd: false }
+            ];
+
+            const mockAd = {
+                id: 'ad',
+                src: 'https://cdn.glitch.me/c00c735d-251f-4886-90b5-e2a220268800%2Fad_video.mp4?v=1727671842426',
+                username: '@BigCorp',
+                description: 'Upgrade your life. Buy our product now! #ad',
+                music: 'Sponsor jingle',
+                profileImg: 'https://i.pravatar.cc/100?u=bigcorp_ad',
+                isAd: true,
+                cta: 'Shop Now'
+            };
+
+            let videoElements = [];
+            let isMuted = true;
+            let currentVideoIndex = 0;
+            let videosLoaded = 0;
+
+            // --- Functionality ---
+
+            // Create video item and inject into the DOM
+            function createVideoItem(videoData, index) {
+                const videoItem = document.createElement('div');
+                videoItem.classList.add('video-item');
+                if (videoData.isAd) {
+                    videoItem.classList.add('ad');
+                }
+                
+                const musicIconPath = 'https://cdn.glitch.global/c00c735d-251f-4886-90b5-e2a220268800/music_icon.svg?v=1727671171822';
+                
+                videoItem.innerHTML = `
+                    <video class="video-player" loop preload="auto" playsinline>
+                        <source src="${videoData.src}" type="video/mp4">
+                    </video>
+                    <div class="video-overlay">
+                        <span class="play-pause-icon">▶️</span>
+                    </div>
+                    ${videoData.isAd ? `<div class="ad-label">Sponsored</div><div class="ad-cta">Shop Now</div>` : ''}
+                    <div class="mute-button">
+                        <span class="mute-icon ${isMuted ? 'muted' : 'unmuted'}"></span>
+                    </div>
+                    <div class="video-sidebar">
+                        <div class="sidebar-item">
+                            <div class="profile-img-container">
+                                <span class="sidebar-icon profile"><img src="${videoData.profileImg}" alt="${videoData.username}"></span>
+                                ${index === 0 ? '<div class="add-profile">+</div>' : ''}
+                            </div>
+                            <span>Follow</span>
+                        </div>
+                        <div class="sidebar-item">
+                            <span class="sidebar-icon like"></span>
+                            <span>${(Math.floor(Math.random() * 500) + 50)}k</span>
+                        </div>
+                        <div class="sidebar-item">
+                            <span class="sidebar-icon comment"></span>
+                            <span>${(Math.floor(Math.random() * 5000) + 100)}</span>
+                        </div>
+                        <div class="sidebar-item">
+                            <span class="sidebar-icon share"></span>
+                            <span>${(Math.floor(Math.random() * 1000) + 50)}</span>
+                        </div>
+                    </div>
+                    <div class="video-info">
+                        <h3>${videoData.username}</h3>
+                        <p>${videoData.description}</p>
+                        <div class="video-music">
+                            <img src="${musicIconPath}" class="video-music-icon" alt="Music icon">
+                            <span>${videoData.music}</span>
+                        </div>
+                    </div>
+                `;
+                return videoItem;
+            }
+
+            // Append videos to the feed
+            function loadMoreVideos() {
+                const newVideos = [];
+                for (let i = 0; i < 4; i++) {
+                    const videoData = mockVideos[Math.floor(Math.random() * mockVideos.length)];
+                    newVideos.push(createVideoItem(videoData, videosLoaded + i));
+                }
+
+                if (videosLoaded > 0 && videosLoaded % 5 === 0) {
+                    newVideos.splice(1, 0, createVideoItem(mockAd, videosLoaded));
+                }
+
+                newVideos.forEach(item => {
+                    videoFeed.appendChild(item);
+                    videoElements.push(item.querySelector('.video-player'));
+                });
+                videosLoaded += newVideos.length;
+            }
+
+            // Intersectrion Observer for efficient auto-play
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const video = entry.target.querySelector('video');
+                    if (entry.isIntersecting && video) {
+                        video.play().catch(error => console.error("Autoplay was prevented:", error));
+                        video.classList.add('active');
+                        video.muted = isMuted;
+                    } else if (video) {
+                        video.pause();
+                        video.currentTime = 0;
+                        video.classList.remove('active');
+                    }
+                });
+            }, { threshold: 0.8 });
+
+            function setupObserver() {
+                document.querySelectorAll('.video-item').forEach(item => {
+                    observer.observe(item);
+                });
+            }
+
+            // Scroll event listener for infinite loading
+            videoFeed.addEventListener('scroll', () => {
+                if (videoFeed.scrollTop + videoFeed.clientHeight >= videoFeed.scrollHeight - 500) {
+                    loadMoreVideos();
+                    setupObserver();
+                }
+            });
+
+            // Handle user interactions
+            function handleInteractions(event) {
+                const target = event.target;
+                const isVideo = target.closest('.video-player');
+                const isLikeButton = target.closest('.sidebar-item .like');
+                const isMuteButton = target.closest('.mute-button');
+
+                // Toggle play/pause on video click
+                if (isVideo) {
+                    const video = isVideo;
+                    if (event.detail === 2) {
+                        // Double-tap to like
+                        const videoItem = target.closest('.video-item');
+                        const heart = document.createElement('span');
+                        heart.classList.add('double-tap-heart');
+                        heart.textContent = '❤️';
+                        videoItem.appendChild(heart);
+                        setTimeout(() => heart.remove(), 600);
+
+                        const likeButton = videoItem.querySelector('.sidebar-icon.like');
+                        if (!likeButton.classList.contains('liked')) {
+                            likeButton.click(); // Trigger the like logic
+                        }
+                    } else if (event.detail === 1) {
+                        // Single tap to play/pause
+                        if (video.paused) {
+                            video.play();
+                        } else {
+                            video.pause();
+                        }
+                    }
+                }
+
+                // Toggle mute on button click
+                if (isMuteButton) {
+                    isMuted = !isMuted;
+                    videoElements.forEach(video => {
+                        video.muted = isMuted;
+                    });
+                    document.querySelectorAll('.mute-icon').forEach(icon => {
+                        icon.classList.toggle('muted', isMuted);
+                        icon.classList.toggle('unmuted', !isMuted);
+                    });
+                }
+
+                // Handle like button click
+                if (isLikeButton) {
+                    isLikeButton.classList.toggle('liked');
+                    const countSpan = isLikeButton.nextElementSibling;
+                    let countText = countSpan.textContent;
+                    let currentCount = parseFloat(countText) * 1000;
+
+                    if (isLikeButton.classList.contains('liked')) {
+                        currentCount += 1;
+                    } else {
+                        currentCount -= 1;
+                    }
+                    countSpan.textContent = `${(currentCount / 1000).toFixed(1)}k`;
+                }
+            }
+
+            // Initialize app
+            function initApp() {
+                loadMoreVideos();
+                loader.classList.add('hidden');
+                setupObserver();
+                appContainer.addEventListener('click', handleInteractions);
+
+                // Start the first video
+                if (videoElements[0]) {
+                    videoElements[0].play().catch(error => console.error("Autoplay was prevented:", error));
+                    videoElements[0].classList.add('active');
+                    videoElements[0].muted = isMuted;
+                }
+            }
+
+            // Preload a few videos for a smooth start
+            const initialVideoCount = 3;
+            const preloadPromises = mockVideos.slice(0, initialVideoCount).map(video => {
+                return new Promise((resolve) => {
+                    const tempVideo = document.createElement('video');
+                    tempVideo.src = video.src;
+                    tempVideo.addEventListener('canplaythrough', () => resolve());
+                    tempVideo.load();
+                });
+            });
+
+            Promise.all(preloadPromises).then(initApp);
+        });
+    </script>
+</body>
+</html>
